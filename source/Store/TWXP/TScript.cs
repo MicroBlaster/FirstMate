@@ -51,14 +51,15 @@ namespace TWXP
 
         private void ReadCompiled(string fileName)
         {
-            CTS cts = new CTS();
+            CTS cts;
 
             if (System.IO.File.Exists(fileName))
             {
                 FileStream fs = new FileStream(fileName, FileMode.Open);
 
-                BinaryFormatter formatter = new BinaryFormatter();
-                cts = (CTS)formatter.Deserialize(fs);
+                //BinaryFormatter formatter = new BinaryFormatter();
+                //cts = (CTS)formatter.Deserialize(fs);
+                cts = CTS.Deserialize(fs);
             }
             else
         	{
@@ -117,12 +118,25 @@ namespace TWXP
             }
 
         }
+
+        public static CTS Deserialize(Stream s)
+        {
+            CTS cts = new CTS();
+            using (BinaryReader br = new BinaryReader(s))
+            {
+                cts.Header.ProgramName = br.ReadChars(9).ToString();
+                cts.Header.Version = br.ReadUInt16();
+                cts.Header.DescSize = br.ReadInt32();
+                cts.Header.CodeSize = br.ReadInt32();
+            }
+            return cts;
+        }
     }
 
     class Header
     {
         public string ProgramName { get; set; }
-        public ushort Version { get; set; }
+        public UInt16 Version { get; set; }
         public int DescSize { get; set; }
         public int CodeSize { get; set; }
 
