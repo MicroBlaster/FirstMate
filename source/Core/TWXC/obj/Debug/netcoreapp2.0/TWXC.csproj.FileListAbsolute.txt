@@ -1,0 +1,13 @@
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\bin\Debug\netcoreapp2.0\TWXC.deps.json
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\bin\Debug\netcoreapp2.0\TWXC.runtimeconfig.json
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\bin\Debug\netcoreapp2.0\TWXC.runtimeconfig.dev.json
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\bin\Debug\netcoreapp2.0\TWXC.dll
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\bin\Debug\netcoreapp2.0\TWXC.pdb
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\bin\Debug\netcoreapp2.0\TWXP.dll
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\bin\Debug\netcoreapp2.0\TWXP.pdb
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\obj\Debug\netcoreapp2.0\TWXC.csprojResolveAssemblyReference.cache
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\obj\Debug\netcoreapp2.0\TWXC.csproj.CoreCompileInputs.cache
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\obj\Debug\netcoreapp2.0\TWXC.AssemblyInfoInputs.cache
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\obj\Debug\netcoreapp2.0\TWXC.AssemblyInfo.cs
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\obj\Debug\netcoreapp2.0\TWXC.dll
+C:\Projects\Tradewars\FirstMate\source\Core\TWXC\obj\Debug\netcoreapp2.0\TWXC.pdb

@@ -1,0 +1,9 @@
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\bin\Debug\netcoreapp2.0\TWXP.deps.json
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\bin\Debug\netcoreapp2.0\TWXP.dll
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\bin\Debug\netcoreapp2.0\TWXP.pdb
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\obj\Debug\netcoreapp2.0\TWXP.csprojResolveAssemblyReference.cache
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\obj\Debug\netcoreapp2.0\TWXP.csproj.CoreCompileInputs.cache
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\obj\Debug\netcoreapp2.0\TWXP.AssemblyInfoInputs.cache
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\obj\Debug\netcoreapp2.0\TWXP.AssemblyInfo.cs
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\obj\Debug\netcoreapp2.0\TWXP.dll
+C:\Projects\Tradewars\FirstMate\source\Store\TWXP\obj\Debug\netcoreapp2.0\TWXP.pdb
