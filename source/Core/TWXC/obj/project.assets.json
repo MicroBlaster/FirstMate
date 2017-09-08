@@ -203,16 +203,6 @@
         "build": {
           "build/netstandard2.0/NETStandard.Library.targets": {}
         }
-      },
-      "TWXP/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v2.0",
-        "compile": {
-          "bin/placeholder/TWXP.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/TWXP.dll": {}
-        }
       }
     }
   },
@@ -1521,17 +1511,11 @@
         "netstandard.library.2.0.0-preview2-25401-01.nupkg.sha512",
         "netstandard.library.nuspec"
       ]
-    },
-    "TWXP/1.0.0": {
-      "type": "project",
-      "path": "../../Store/TWXP/TWXP.csproj",
-      "msbuildProject": "../../Store/TWXP/TWXP.csproj"
     }
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v2.0": [
-      "Microsoft.NETCore.App >= 2.0.0-preview2-25407-01",
-      "TWXP >= 1.0.0"
+      "Microsoft.NETCore.App >= 2.0.0-preview2-25407-01"
     ]
   },
   "packageFolders": {
@@ -1563,11 +1547,7 @@
       },
       "frameworks": {
         "netcoreapp2.0": {
-          "projectReferences": {
-            "C:\\Projects\\Tradewars\\FirstMate\\source\\Store\\TWXP\\TWXP.csproj": {
-              "projectPath": "C:\\Projects\\Tradewars\\FirstMate\\source\\Store\\TWXP\\TWXP.csproj"
-            }
-          }
+          "projectReferences": {}
         }
       },
       "warningProperties": {

@@ -81,6 +81,23 @@ namespace TWXP
             cts.Header.DescSize = 10;
             cts.Header.CodeSize = 20;
 
+            String data = "Hello World!";
+
+
+            Encryption encryptor = new Encryption
+            {
+                ChunkKey = 210,
+                ChunkSize = 25,
+                Key = "195,23,85,11,77",
+                Shift = 14,
+                ShiftKey = 78
+            };
+
+            encryptor.Encrypt(ref data);
+            cts.Data = data;
+
+
+            encryptor.Decrypt(ref data);
             //Hashtable addresses = new Hashtable();
             //addresses.Add("Jeff", "123 Main Street, Redmond, WA 98052");
             //addresses.Add("Fred", "987 Pine Road, Phila., PA 19116");
@@ -100,6 +117,7 @@ namespace TWXP
     class CTS
     {
         public Header Header { get; set; }
+        public String Data { get; set; }
 
         public CTS()
         {

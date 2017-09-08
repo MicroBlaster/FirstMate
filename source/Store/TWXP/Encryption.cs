@@ -33,12 +33,12 @@ namespace TWXP
             CheckSum = 0xF0;
             Key = FKey;
             ConvertKey(ref Key);
-            for (I = 1; I <= Target.Length; I++)
+            for (I = 0; I < Target.Length; I++)
             {
                 B = (byte)(Target[I]);
                 CheckSum = (byte)(CheckSum ^ B);
                 C = B;
-                for (X = 1; X <= Key.Length; X++)
+                for (X = 0; X < Key.Length; X++)
                 {
                     B = (byte)(B ^ (Key[X]));
                 }
@@ -251,7 +251,7 @@ namespace TWXP
             int I;
             string KeyChar;
             KeyChar = "";
-            for (I = 1; I <= Key.Length; I++)
+            for (I = 0; I < Key.Length; I++)
             {
                 if ((Key[I] == ','))
                 {
