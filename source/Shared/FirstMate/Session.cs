@@ -53,10 +53,10 @@ namespace FirstMate
 
 
             Stream rs = typeof(Menu).GetTypeInfo().Assembly.GetManifestResourceStream("FirstMate.Resources.menu.xml");
-            Using(XmlSerializer xml = new XmlSerializer(typeof(List<Menu>), new XmlRootAttribute("Menus")));
-            {
-                Menus = (List<Menu>)xml.Deserialize(rs);
-            }
+//            Using(XmlSerializer xml = new XmlSerializer(typeof(List<Menu>), new XmlRootAttribute("Menus")));
+//            {
+//                Menus = (List<Menu>)xml.Deserialize(rs);
+//            }
 
 
 

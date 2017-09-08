@@ -54,7 +54,7 @@ namespace Service
 
         private static void onConnect(object sender, EventArgs e)
         {
-            sessionList.Add(new Session((Client)sender, sessionList));
+//            sessionList.Add(new Session((Client)sender, sessionList));
         }
 
     }
