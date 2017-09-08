@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Menus>
+  <Menu ID="FirstMate" Locked="True">
+    <Items>
+      <Item ID="Configuration">
+        <Actions>
+          <Action Type="LoadMenu">Configuration</Action>
+        </Actions>
+      </Item>
+      <Item ID="Identity">
+        <Actions>
+          <Action Type="LoadMenu">Identity</Action>
+        </Actions>
+      </Item>
+      <Item ID="Localization">
+        <Actions>
+          <Action Type="LoadMenu">Localization</Action>
+        </Actions>
+      </Item>
+      <Item ID="Session">
+        <Actions>
+          <Action Type="LoadMenu">Session</Action>
+        </Actions>
+      </Item>
+      <Item ID="Help">
+        <Actions>
+          <Action Type="LoadMenu">Help</Action>
+        </Actions>
+      </Item>
+    </Items>
+  </Menu>
+  <Menu ID="Configuration" Locked="True">
+    <Items>
+      <Item ID="Database">
+        <Actions>
+          <Action Type="LoadMenu">Database</Action>
+        </Actions>
+      </Item>
+      <Item ID="Background">
+        <Actions>
+          <Action Type="LoadMenu">Background</Action>
+        </Actions>
+      </Item>
+    </Items>
+  </Menu>
+  <Menu ID="Identity" Locked="True">
+    <Items>
+      <Item ID="List">
+        <Actions>
+          <Action Type="ItemList">View</Action>
+        </Actions>
+      </Item>
+      <Item ID="Add">
+        <Actions>
+          <Action Type="LoadMenu">Background</Action>
+        </Actions>
+      </Item>
+      <Item ID="Edit">
+        <Actions>
+          <Action Type="LoadMenu">Background</Action>
+        </Actions>
+      </Item>
+      <Item ID="Delete">
+        <Actions>
+          <Action Type="LoadMenu">Background</Action>
+        </Actions>
+      </Item>
+    </Items>
+  </Menu>
+
+</Menus>
