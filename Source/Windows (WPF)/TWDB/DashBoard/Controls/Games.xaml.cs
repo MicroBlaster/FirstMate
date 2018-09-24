@@ -5,7 +5,7 @@ namespace DashBoard.Controls
     /// <summary>
     /// Interaction logic for Overview.xaml
     /// </summary>
-    public partial class Overview : UserControl
+    public partial class Games : UserControl
     {
         private Main mainwindow;
         public Main MainWindow
@@ -18,7 +18,7 @@ namespace DashBoard.Controls
             }
         }
 
-        public Overview()
+        public Games()
         {
             InitializeComponent();
 
@@ -26,7 +26,7 @@ namespace DashBoard.Controls
 
         public void Refresh()
         {
-            OverviewDataGrid.Items.Refresh();
+            gamesDataGrid.Items.Refresh();
         }
 
     }

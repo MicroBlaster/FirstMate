@@ -10,15 +10,8 @@
                 <DropShadowBitmapEffect Color="Gray" ShadowDepth="8" Softness="1" Opacity=".5"/>
             </Grid.BitmapEffect>
 
-            <!--<Image Name="StardockImage" Margin="50,25,0,0" Width="100" Height="70" HorizontalAlignment="Left" VerticalAlignment="Top" Source="/DashBoard;component/Images/StarDock.png" Opacity="1"/>
-            <Image Name="TwLogoImage" Margin="152,40,0,0" Width="75" Height="25" HorizontalAlignment="Left" VerticalAlignment="Top" Source="/DashBoard;component/Images/TradeWars.png" Opacity=".5"/>
-            <TextBlock Name="DashBoardLogo" Text="Dashboard" Margin="152,48,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
-                       Height="32" Width="162" FontFamily="Cooper Black" FontSize="28" Foreground="#FF1515BF">
-                <TextBlock.Effect>
-                    <DropShadowEffect ShadowDepth="2" Direction="330" Color="White" Opacity="0.5" BlurRadius="2"/>
-                </TextBlock.Effect>
-            </TextBlock>-->
-            <TextBlock Name="aboutTextBlock" Foreground="#60FFFFFF" HorizontalAlignment="Left" Margin="50,20,0,0" Width="300" Height="180" VerticalAlignment="Top" />
+            <Image Name="AboutImage" Margin="0,10,0,0" Height="34" VerticalAlignment="Top" Source="/DashBoard;component/Images/about.png" Opacity="1"/>
+            <TextBlock Name="aboutTextBlock" Foreground="#60FFFFFF" HorizontalAlignment="Left" Margin="50,49,0,0" Width="300" Height="151" VerticalAlignment="Top" />
             <Button Content="Ok" Height="23" Margin="0,0,12,12" Opacity=".5"
                     HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="75" 
                     Click="onOkClick"/>

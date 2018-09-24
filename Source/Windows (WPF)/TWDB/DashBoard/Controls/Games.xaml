@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="DashBoard.Controls.Overview"
+﻿<UserControl x:Class="DashBoard.Controls.Games"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -7,15 +7,18 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <DataGrid Name="OverviewDataGrid" Opacity=".7" Margin="16,40,520,162" AutoGenerateColumns="False" IsReadOnly="True">
+        <DataGrid Name="gamesDataGrid" Opacity=".7" Margin="16,40,6,48" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="" MinWidth="20" Binding="{Binding Name}" >
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock"><Setter Property="TextAlignment" Value="Center" /></Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="" MinWidth="180" Binding="{Binding Setting}" />
-                <DataGridTextColumn Header="" MinWidth="40" Binding="{Binding Value}" />
+                <DataGridTextColumn Header="Name" MinWidth="180" Binding="{Binding Title}" />
+                <DataGridTextColumn Header="Traders" MinWidth="40" Binding="{Binding Traders}" />
+                <DataGridTextColumn Header="Dupes" MinWidth="40" Binding="{Binding DupeCount}" />
+                <DataGridTextColumn Header="Fraud" MinWidth="40" Binding="{Binding FraudCount}" />
+                <DataGridTextColumn Header="Notes" MinWidth="500" Binding="{Binding Notes}" />
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

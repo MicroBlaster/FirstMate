@@ -204,8 +204,8 @@
             <Border BorderThickness="1" Margin="145,70,8,8" BorderBrush="{StaticResource outerToolBorderBrush}"></Border>
 
             <Border Name="OverviewHighlight" BorderThickness="1" Margin="10,90,0,0" Width="125" Height="42" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#33FFFFFF" BorderBrush="#55FFFFFF" Visibility="Hidden" />
-            <Border Name="TradersHighlight" BorderThickness="1" Margin="10,140,0,0" Width="125" Height="42" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#33FFFFFF" BorderBrush="#55FFFFFF" Visibility="Hidden"/>
-            <Border Name="frHighlight" BorderThickness="1" Margin="10,190,0,0" Width="125" Height="42" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#33FFFFFF" BorderBrush="#55FFFFFF" Visibility="Hidden"/>
+            <Border Name="GamesHighlight" BorderThickness="1" Margin="10,140,0,0" Width="125" Height="42" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#33FFFFFF" BorderBrush="#55FFFFFF" Visibility="Hidden"/>
+            <Border Name="TradersHighlight" BorderThickness="1" Margin="10,190,0,0" Width="125" Height="42" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#33FFFFFF" BorderBrush="#55FFFFFF" Visibility="Hidden"/>
             <Border Name="feHighlight" BorderThickness="1" Margin="10,240,0,0" Width="125" Height="42" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#33FFFFFF" BorderBrush="#55FFFFFF" Visibility="Hidden"/>
 
             <Image Name="StardockImage" Margin="0,0,0,0" Width="100" Height="70" HorizontalAlignment="Left" VerticalAlignment="Top" Source="/DashBoard;component/Images/StarDock.png" Opacity="1"/>
@@ -217,10 +217,12 @@
                 </TextBlock.Effect>
             </TextBlock>
             <Image Name="OverviewImage"  Margin="10,90,0,0" Width="125" Height="40" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" Source="/DashBoard;component/Images/Overview.png" MouseEnter="OverviewMouseEnter" MouseLeave="OverviewMouseLeave" MouseDown="OverviewClick"/>
-            <Image Name="TradersImage"   Margin="10,140,0,0" Width="125" Height="40" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" Source="/DashBoard;component/Images/Traders.png" Opacity="0.5" MouseEnter="TradersMouseEnter" MouseLeave="TradersMouseLeave" MouseDown="TradersClick"/>
+            <Image Name="GamesImage"    Margin="10,140,0,0" Width="125" Height="40" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" Source="/DashBoard;component/Images/Games.png" Opacity="0.5" MouseEnter="GamesMouseEnter" MouseLeave="GamesMouseLeave" MouseDown="GamesClick"/>
+            <Image Name="TradersImage"   Margin="10,190,0,0" Width="125" Height="40" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Top" Source="/DashBoard;component/Images/Traders.png" Opacity="0.5" MouseEnter="TradersMouseEnter" MouseLeave="TradersMouseLeave" MouseDown="TradersClick"/>
 
             <uc:Overview x:Name="OverviewControl" Margin="155,80,15,25" />
-            <uc:Traders x:Name="TradersControl" Margin="155,80,15,25" Visibility="Hidden"/>
+            <uc:Games    x:Name="GamesControl" Margin="155,80,15,25" Visibility="Hidden"/>
+            <uc:Traders  x:Name="TradersControl" Margin="155,80,15,25" Visibility="Hidden"/>
 
             <Button Name="cmdCloseApp" Style="{StaticResource AppCloseButtonStyle}" 
                 HorizontalAlignment="Right" VerticalAlignment="Top" 
@@ -247,6 +249,7 @@
                                  Style="{DynamicResource ContextMenuStyle}" Foreground="#FFC0C0C0">
 
                         <MenuItem Name="OverviewMenuItem" Header="Overview" Click="cmdShowOverview" IsCheckable="True" IsChecked="True" />
+                        <MenuItem Name="GamesMenuItem" Header="Games" Click="cmdShowGames" IsCheckable="True" IsChecked="True" />
                         <MenuItem Name="TradersMenuItem" Header="Traders" Click="cmdShowTraders" IsCheckable="True" Style="{DynamicResource MenuItemStyle}"/>
                         <Separator Background="#FF505050"/>
                         <MenuItem Name="FraudDetectionMenuItem" Header="Enable Fraud Detection" Click="cmdFraudDetection" IsCheckable="True" />

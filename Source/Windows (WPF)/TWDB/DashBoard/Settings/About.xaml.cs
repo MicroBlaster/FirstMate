@@ -28,9 +28,10 @@ namespace DashBoard
 
             aboutTextBlock.Text = $"TradeWars DashBoard - Version {CompiledDate:yy}{CompiledDate.DayOfYear / 7:00} " +
                                   $"(Build {(CompiledDate.DayOfYear * 24) + CompiledDate.Hour:0000})\n" +
-                                  "© 2018 David McCartney. All Rights Reserved\n\n" + 
-                                  "TradeWars is a registered trademark of\nEpic Interactive Strategy.\n\n" +
-                                  "Free fraud detection provided by:\n\n" +
+                                  "© 2018 David McCartney. All Rights Reserved\n\n" +
+                                  "TradeWars is a registered trademark of\n" +
+                                  "Epic Interactive Strategy. https://www.eisonline.com/\n\n" +
+                                  "Free fraud detection provided by:\n" +
                                   "     https://ipqualityscore.com/ \n" +
                                   "     https://getipintel.net";
         }

@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Xml;
 
 namespace DashBoard.Settings
 {
@@ -54,12 +55,49 @@ namespace DashBoard.Settings
                 PrivareKeyTextBox.Focus();
                 SystemSounds.Beep.Play();
             }
+            else if (PrivareKeyTextBox.Text.Length != 32)
+            {
+                FraudTextBlock.Text = "Private key must be 32 characters long.";
+                FraudTextBlock.Foreground = Brushes.Red;
+
+                PrivareKeyTextBox.Focus();
+                SystemSounds.Beep.Play();
+            }
             else
             {
-                Properties.Settings.Default.EmailAddress = EmailAddressTextBox.Text;
-                Properties.Settings.Default.PrivateKey = PrivareKeyTextBox.Text;
-                Properties.Settings.Default.FraudDetection = true;
-                this.Hide();
+                try
+                {
+                    string Uri = "https://www.ipqualityscore.com/api/xml/ip";
+                    string Email = EmailAddressTextBox.Text;
+                    string Key = PrivareKeyTextBox.Text;
+
+                    XmlDocument xmlDoc = new XmlDocument();
+                    xmlDoc.Load($"{Uri}/{Key}/8.8.8.8");
+                    XmlNode resultNode = xmlDoc.SelectSingleNode("//result");
+                    if (!resultNode["success"].FirstChild.Value.Contains("true"))
+                    {
+                        FraudTextBlock.Text = "Private key appears to be invalid.\nPlease enter a valid key from ipqualityscore.com";
+                        FraudTextBlock.Foreground = Brushes.Red;
+
+                        PrivareKeyTextBox.Focus();
+                        SystemSounds.Beep.Play();
+                    }
+                    else
+                    {
+                        Properties.Settings.Default.EmailAddress = EmailAddressTextBox.Text;
+                        Properties.Settings.Default.PrivateKey = PrivareKeyTextBox.Text;
+                        Properties.Settings.Default.FraudDetection = true;
+                        this.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FraudTextBlock.Text = ex.Message;
+                    FraudTextBlock.Foreground = Brushes.Red;
+
+                    PrivareKeyTextBox.Focus();
+                    SystemSounds.Beep.Play();
+                }
             }
         }
 

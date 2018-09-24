@@ -1,22 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Windows.Controls.Primitives;
 using Microsoft.Win32;
 using System.ComponentModel;
+using System.Threading.Tasks;
+using System.Net.Http;
+using System.Xml;
 
 namespace DashBoard
 {
@@ -86,18 +82,16 @@ namespace DashBoard
 
             LoadSettings();
 
-            OverviewControl.MainWindow = this;
-            //OverviewControl.gamesDataGrid.IsEnabled = false;
-
-            TradersControl.MainWindow = this;
-            //TradersControl.tradersDataGrid.IsEnabled = false;
+            //OverviewControl.MainWindow = this;
+            //GamesControl.MainWindow = this;
+            //TradersControl.MainWindow = this;
 
             fraudWorker = new BackgroundWorker();
             fraudWorker.WorkerSupportsCancellation = true;
             fraudWorker.WorkerReportsProgress = true;
             fraudWorker.ProgressChanged += fraudWorkerProgress;
             fraudWorker.RunWorkerCompleted += fraudWorkerCompleted;
-            fraudWorker.DoWork += fraudWorkerDoWork;
+            fraudWorker.DoWork += fraudWorkerDoWorkAsync;
 
             logWorker = new BackgroundWorker();
             logWorker.WorkerSupportsCancellation = true;
@@ -500,12 +494,40 @@ namespace DashBoard
         private void OverviewClick(object sender, MouseEventArgs e)
         {
             OverviewControl.Visibility = Visibility.Visible;
+            GamesControl.Visibility = Visibility.Hidden;
             TradersControl.Visibility = Visibility.Hidden;
 
             OverviewImage.Opacity = 1;
+            GamesImage.Opacity = .5;
             TradersImage.Opacity = .5;
 
             OverviewMenuItem.IsChecked = true;
+            GamesMenuItem.IsChecked = false;
+            TradersMenuItem.IsChecked = false;
+        }
+
+        private void GamesMouseEnter(object sender, MouseEventArgs e)
+        {
+            GamesHighlight.Visibility = Visibility.Visible;
+        }
+
+        private void GamesMouseLeave(object sender, MouseEventArgs e)
+        {
+            GamesHighlight.Visibility = Visibility.Hidden;
+        }
+
+        private void GamesClick(object sender, MouseEventArgs e)
+        {
+            OverviewControl.Visibility = Visibility.Hidden;
+            GamesControl.Visibility = Visibility.Visible;
+            TradersControl.Visibility = Visibility.Hidden;
+
+            OverviewImage.Opacity = .5;
+            GamesImage.Opacity = 1;
+            TradersImage.Opacity = .5;
+
+            OverviewMenuItem.IsChecked = false;
+            GamesMenuItem.IsChecked = true;
             TradersMenuItem.IsChecked = false;
         }
 
@@ -522,12 +544,15 @@ namespace DashBoard
         private void TradersClick(object sender, MouseEventArgs e)
         {
             OverviewControl.Visibility = Visibility.Hidden;
+            GamesControl.Visibility = Visibility.Hidden;
             TradersControl.Visibility = Visibility.Visible;
 
             OverviewImage.Opacity = .5;
+            GamesImage.Opacity = .5;
             TradersImage.Opacity = 1;
 
             OverviewMenuItem.IsChecked = false;
+            GamesMenuItem.IsChecked = false;
             TradersMenuItem.IsChecked = true;
         }
 
@@ -555,24 +580,45 @@ namespace DashBoard
         private void cmdShowOverview(object sender, RoutedEventArgs e)
         {
             OverviewControl.Visibility = Visibility.Visible;
+            GamesControl.Visibility = Visibility.Hidden;
             TradersControl.Visibility = Visibility.Hidden;
 
             OverviewImage.Opacity = 1;
+            GamesImage.Opacity = .5;
             TradersImage.Opacity = .5;
 
             OverviewMenuItem.IsChecked = true;
+            GamesMenuItem.IsChecked = false;
+            TradersMenuItem.IsChecked = false;
+        }
+
+        private void cmdShowGames(object sender, RoutedEventArgs e)
+        {
+            OverviewControl.Visibility = Visibility.Hidden;
+            GamesControl.Visibility = Visibility.Visible;
+            TradersControl.Visibility = Visibility.Hidden;
+
+            OverviewImage.Opacity = .5;
+            GamesImage.Opacity = 1;
+            TradersImage.Opacity = .5;
+
+            OverviewMenuItem.IsChecked = false;
+            GamesMenuItem.IsChecked = true;
             TradersMenuItem.IsChecked = false;
         }
 
         private void cmdShowTraders(object sender, RoutedEventArgs e)
         {
             OverviewControl.Visibility = Visibility.Hidden;
+            GamesControl.Visibility = Visibility.Hidden;
             TradersControl.Visibility = Visibility.Visible;
 
             OverviewImage.Opacity = .5;
+            GamesImage.Opacity = .5;
             TradersImage.Opacity = 1;
 
             OverviewMenuItem.IsChecked = false;
+            GamesMenuItem.IsChecked = false;
             TradersMenuItem.IsChecked = true;
         }
 
@@ -592,6 +638,7 @@ namespace DashBoard
                 if (Properties.Settings.Default.FraudDetection)
                 {
                     FraudDetectionMenuItem.IsChecked = true;
+                    fraudWorker.RunWorkerAsync();
                 }
                 else
                 {
@@ -617,7 +664,7 @@ namespace DashBoard
             public bool Active, Scheduled, Deleted;
             public int Traders { get; set; }
             public int DupeCount { get; set; }
-            public int ProxyCount { get; set; }
+            public int FraudCount { get; set; }
             public string Name { get; set; }
             public string Title { get; set; }
             public string Description { get; set; }
@@ -631,7 +678,7 @@ namespace DashBoard
                 Deleted = false;
                 Traders = 0;
                 DupeCount = 0;
-                ProxyCount = 0;
+                FraudCount = 0;
             }
         }
 
@@ -639,18 +686,23 @@ namespace DashBoard
         {
             public DateTime TimeStamp { get; set; }
             public bool Active { get; set; }
-            public bool UsingProxy { get; set; }
             public bool IsDupe { get; set; }
+            public bool IsFraud { get; set; }
+            public bool IsDynamic { get; set; }
             public int AddressCount { get; set; }
             public int UserID { get; set; }
+            public int IpqFraudScore { get; set; }
+            public int IpiFraudScore { get; set; }
             public string DisplayName { get; set; }
+            public string DisplayAddress { get; set; }
+            public string LastIP { get; set; }
             public string Game { get; set; }
             public string Logon { get; set; }
             public string Alias { get; set; }
-            public string LastIP { get; set; }
             public string Location { get; set; }
             public string Provider { get; set; }
             public string Note { get; set; }
+            public string LastError { get; set; }
 
             public Trader()
             {
@@ -698,19 +750,22 @@ namespace DashBoard
 
         private void logWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            //OverviewControl.Refresh();
-            //OverviewControl.gamesDataGrid.IsEnabled = true;
-            OverviewControl.gamesDataGrid.ItemsSource = GameList;
-
-            //TradersControl.Refresh();
-            //TradersControl.tradersDataGrid.IsEnabled = true;
-            TradersControl.tradersDataGrid.ItemsSource = TraderList;
 
             if (Properties.Settings.Default.FraudDetection == true)
             {
                 fraudWorker.RunWorkerAsync();
             }
-         }
+            else
+            {
+                foreach (Game g in GameList)
+                {
+                    g.FraudCount = TraderList.Where(t => t.Game == g.Name & t.IsFraud).Count();
+                }
+
+                GamesControl.gamesDataGrid.ItemsSource = GameList;
+                TradersControl.tradersDataGrid.ItemsSource = TraderList;
+            }
+        }
 
 
         private void logWorkerDoWork(object sender, DoWorkEventArgs e)
@@ -774,6 +829,7 @@ namespace DashBoard
                                             UserID = uid,
                                             Game = game.Name,
                                             LastIP = line1.Split(' ')[3],
+                                            DisplayAddress = line1.Split(' ')[3],
                                             Logon = logon,
                                             Alias = alias,
                                             DisplayName = display,
@@ -784,6 +840,7 @@ namespace DashBoard
                                 catch (Exception ex)
                                 {
                                     // TODO: Log parse exception
+                                    throw;
                                 }
 
 
@@ -821,6 +878,8 @@ namespace DashBoard
                                             IP = address});
 
                                         traders.Single().AddressCount ++;
+                                        traders.Single().IsDynamic = true;
+                                        traders.Single().DisplayAddress = $"{line1.Split(' ')[3]} ({traders.Single().AddressCount})";
 
                                     }
                                 }
@@ -828,6 +887,7 @@ namespace DashBoard
                             catch (Exception ex)
                             {
                                 // TODO: Log parse exception
+                                throw;
                             }
 
 
@@ -837,9 +897,6 @@ namespace DashBoard
 
                     logFile.Close();
 
-                    //var dupes = AddressList.Where(a => a.Game == game.Name).GroupBy(u => new { u.Game, u.IP }, u => u.IP).Distinct();
-                        
-                        //.Where(u => u.Count() > 1);
                 }
             }
 
@@ -863,20 +920,122 @@ namespace DashBoard
                     {
                         Trader trader = TraderList.Where(t => t.Game == g.Name & t.Logon == item.Logon).Single();
                         trader.IsDupe = true;
-                        trader.Note = $"Dupe: {DupeLogons} @ {item.IP}";
+                        trader.Note = $"Dupe: {DupeLogons} @ {item.IP}".Replace("/ "," ");
                     }
                 }
             }
-            if (Properties.Settings.Default.FraudDetection == false)
-            {
-                ReadProviderLog();
+
+            string AppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+            if(File.Exists(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "provider.log")))
+            { 
+            XmlDocument xmlDoc = new XmlDocument();
+
+                using (StreamReader sr = new StreamReader(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "provider.log")))
+                {
+                    while (sr.Peek() >= 0)
+                    {
+                        try
+                        {
+                            string line = sr.ReadLine();
+                            xmlDoc.LoadXml(line);
+                            XmlNode providerNode = xmlDoc.SelectSingleNode("//Provider");
+
+                            string LastIP = providerNode.Attributes["IP"].Value;
+
+                            List<Trader> traders = TraderList.Where(t => t.LastIP == LastIP).ToList();
+                            foreach (Trader trader in traders)
+                            {
+                                trader.LastError = providerNode.Attributes["LastError"].Value;
+                                trader.Provider = providerNode.Attributes["Provider"].Value;
+                                trader.Location = providerNode.Attributes["Location"].Value;
+                                trader.IsFraud = (providerNode.Attributes["IsFraud"].Value == "True");
+                                trader.IpqFraudScore = Int32.Parse(providerNode.Attributes["IpqFraudScore"].Value);
+                                trader.IpiFraudScore = Int32.Parse(providerNode.Attributes["IpiFraudScore"].Value);
+
+                                if (trader.IsFraud)
+                                {
+                                    trader.Note = $"Fraud Score: {trader.IpqFraudScore} / {trader.IpiFraudScore * 100} {trader.Note}";
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                        }
+                    }
+                }
             }
-
-
         }
 
-        private void ReadProviderLog()
+
+        private static async Task CheckFraud(Trader trader)
         {
+            HttpClient client = new HttpClient();
+            trader.LastError = null;
+
+            try
+            {
+                string Uri1 = "https://www.ipqualityscore.com/api/xml/ip";
+                string Uri2 = "http://check.getipintel.net/check.php";
+                string Email = Properties.Settings.Default.EmailAddress;
+                string Key = Properties.Settings.Default.PrivateKey;
+
+                // Initiate ipqualityscore.com request in the background.
+                var stringTask1 = client.GetStringAsync($"{Uri1}/{Key}/{trader.LastIP}");
+
+                // Initiate getipintel.net request in the background.
+                var stringTask2 = client.GetStringAsync($"{Uri2}?ip={trader.LastIP}&contact={Email}&flags=m");
+
+
+                // Process ipqualityscore.com result.
+                var msg = await stringTask1;
+                XmlDocument xmlDoc2 = new XmlDocument();
+                xmlDoc2.LoadXml(msg.Replace("\n", "").Replace("\t", ""));
+                XmlNode resultNode = xmlDoc2.SelectSingleNode("//result");
+                if (resultNode["success"].FirstChild.Value == "true")
+                {
+                    String city = resultNode["city"].FirstChild.Value;
+                    String region = resultNode["region"].FirstChild.Value;
+                    String country = resultNode["country_code"].FirstChild.Value;
+
+                    bool proxy = (resultNode["proxy"].FirstChild.Value == "true");
+                    bool vpn = (resultNode["vpn"].FirstChild.Value == "true");
+                    bool tor = (resultNode["tor"].FirstChild.Value == "true");
+                    bool abuse = (resultNode["recent_abuse"].FirstChild.Value == "true");
+
+                    trader.IpqFraudScore = Int32.Parse(resultNode["fraud_score"].FirstChild.Value);
+                    trader.Provider = resultNode["ISP"].FirstChild.Value.Replace("&", "");  // or use organization?
+                    trader.Location = $"{city}, {region} {country}";
+                    trader.IsFraud = (proxy | vpn | tor | abuse | trader.IpqFraudScore > 0);
+
+                }
+                else
+                {
+                    trader.LastError = resultNode["message"].FirstChild.Value;
+                }
+
+                try
+                {
+                    //Process ipqualityscore.com result.
+                    msg = await stringTask2;
+                    trader.IpiFraudScore = Int32.Parse(msg);
+                    trader.IsFraud = (trader.IsFraud | trader.IpiFraudScore > 0);
+                }
+                catch (Exception)
+                {
+                    trader.IpiFraudScore = -1;
+                }
+            }
+            catch (Exception ex)
+            {
+                trader.LastError = ex.Message;
+            }
+        
+            if (trader.IsFraud)
+            {
+                trader.Note = $"Fraud Score: {trader.IpqFraudScore} / {trader.IpiFraudScore * 100} {trader.Note}";
+            }
+
         }
 
         private void fraudWorkerProgress(object sender, ProgressChangedEventArgs e)
@@ -885,11 +1044,36 @@ namespace DashBoard
 
         private void fraudWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            foreach(Game g in GameList)
+            {
+                g.FraudCount = TraderList.Where(t => t.Game == g.Name & t.IsFraud).Count();
+            }
+
+            GamesControl.gamesDataGrid.ItemsSource = GameList;
+            TradersControl.tradersDataGrid.ItemsSource = TraderList;
         }
 
-        private void fraudWorkerDoWork(object sender, DoWorkEventArgs e)
+        private void fraudWorkerDoWorkAsync(object sender, DoWorkEventArgs e)
         {
-            ReadProviderLog();
+            string AppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            if (!Directory.Exists($"{AppDataPath}/TradeWars/Dashboard"))
+            {
+                Directory.CreateDirectory($"{AppDataPath}/TradeWars");
+                Directory.CreateDirectory($"{AppDataPath}/TradeWars/Dashboard");
+            }
+
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "provider.log"),true))
+            {
+                foreach (Trader trader in TraderList.Where(t => t.Location == null && t.LastError == null))
+                {
+                    CheckFraud(trader).Wait();
+                    outputFile.WriteLine($"<Provider IP=\"{trader.LastIP}\" LastError=\"{trader.LastError}\" Provider=\"{trader.Provider}\" Location=\"{trader.Location}\" IsFraud=\"{trader.IsFraud}\" IpqFraudScore=\"{trader.IpqFraudScore}\" IpiFraudScore=\"{trader.IpiFraudScore}\" Checked=\"{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortDateString()}\" />");
+                    if (trader.LastError != null)
+                    {
+                        trader.Note = $"Fraud Check Failed. {trader.Note}";
+                    }
+                }
+            }
         }
 
         #endregion
