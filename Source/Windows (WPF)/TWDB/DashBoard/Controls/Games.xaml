@@ -7,7 +7,13 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <DataGrid Name="gamesDataGrid" Opacity=".7" Margin="16,40,6,48" AutoGenerateColumns="False" IsReadOnly="True">
+        <TextBlock Foreground="#FF0000C0" Grid.Row="1" Grid.Column="0" Margin="15,0,0,0" FontSize="16" Text="Games (Active Only)">
+            <TextBlock.Effect>
+                <DropShadowEffect ShadowDepth="1" Direction="330" Color="White" Opacity="0.5" BlurRadius="1"/>
+            </TextBlock.Effect>
+        </TextBlock>
+
+        <DataGrid Name="gamesDataGrid" Opacity=".7" Margin="10,22,10,40" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="" MinWidth="20" Binding="{Binding Name}" >
                     <DataGridTextColumn.ElementStyle>
@@ -18,8 +24,19 @@
                 <DataGridTextColumn Header="Traders" MinWidth="40" Binding="{Binding Traders}" />
                 <DataGridTextColumn Header="Dupes" MinWidth="40" Binding="{Binding DupeCount}" />
                 <DataGridTextColumn Header="Fraud" MinWidth="40" Binding="{Binding FraudCount}" />
+                <DataGridTextColumn Header="Proxies" MinWidth="40" Binding="{Binding ProxyCount}" />
                 <DataGridTextColumn Header="Notes" MinWidth="500" Binding="{Binding Notes}" />
             </DataGrid.Columns>
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Copy" Command="Copy">
+                        <MenuItem.Icon>
+                            <Image  Source="/DashBoard;component/Images/copy.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Select All" Command="SelectAll"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
         </DataGrid>
     </Grid>
 </UserControl>

@@ -104,7 +104,7 @@ namespace DashBoard.Settings
         private void onCancelClick(object sender, RoutedEventArgs e)
         {
             Properties.Settings.Default.FraudDetection = false;
-            this.Hide();
+            this.Close();
         }
 
         private void Grid_MouseDown(object sender, MouseButtonEventArgs e)

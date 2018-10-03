@@ -16,6 +16,20 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="BanStyle" TargetType="DataGridCell">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Path=Banned}" Value="True">
+                    <Setter Property="Background" Value="Pink"/>
+                    <Setter Property="BorderBrush" Value="Pink"/>
+                    <Setter Property="Foreground" Value="Red"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                </DataTrigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="SteelBlue"/>
+                    <Setter Property="BorderBrush" Value="SteelBlue"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="DupeStyle" TargetType="DataGridCell">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Path=IsDynamic}" Value="True">
@@ -39,9 +53,27 @@
         <Style x:Key="FraudStyle" TargetType="DataGridCell">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Path=IsFraud}" Value="True">
+                    <Setter Property="Background" Value="Yellow"/>
+                    <Setter Property="BorderBrush" Value="Yellow"/>
+                    <Setter Property="Foreground" Value="DarkOrange"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Path=ProxyType}" Value="1">
                     <Setter Property="Background" Value="Pink"/>
                     <Setter Property="BorderBrush" Value="Pink"/>
                     <Setter Property="Foreground" Value="Red"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Path=ProxyType}" Value="2">
+                    <Setter Property="Background" Value="Pink"/>
+                    <Setter Property="BorderBrush" Value="Pink"/>
+                    <Setter Property="Foreground" Value="Red"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Path=ProxyType}" Value="3">
+                    <Setter Property="Background" Value="Magenta"/>
+                    <Setter Property="BorderBrush" Value="Magenta"/>
+                    <Setter Property="Foreground" Value="DarkMagenta"/>
                     <Setter Property="FontWeight" Value="Bold"/>
                 </DataTrigger>
                 <Trigger Property="IsSelected" Value="True">
@@ -52,7 +84,12 @@
         </Style>
     </UserControl.Resources>
     <Grid>
-        <DataGrid Name="tradersDataGrid" Opacity=".7" Margin="16,40,6,48" AutoGenerateColumns="False" IsReadOnly="True">
+        <TextBlock Foreground="#FF0000C0" Grid.Row="1" Grid.Column="0" Margin="15,0,0,0" FontSize="16" Text="Traders (All)">
+            <TextBlock.Effect>
+                <DropShadowEffect ShadowDepth="1" Direction="330" Color="White" Opacity="0.5" BlurRadius="1"/>
+            </TextBlock.Effect>
+        </TextBlock>
+        <DataGrid Name="tradersDataGrid" Opacity=".7" Margin="10,22,10,40" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="" MinWidth="20" Binding="{Binding Game}" >
                     <DataGridTextColumn.ElementStyle>
@@ -61,12 +98,25 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Trader" MinWidth="100" Binding="{Binding DisplayName}" />
+                <DataGridTextColumn Header="Trader" MinWidth="100" Binding="{Binding DisplayName}" CellStyle="{StaticResource BanStyle}"/>
                 <DataGridTextColumn Header="Address" MinWidth="100" Binding="{Binding DisplayAddress}" CellStyle="{StaticResource DupeStyle}"/>
                 <DataGridTextColumn Header="Location" MinWidth="100" Binding="{Binding Location}" />
                 <DataGridTextColumn Header="Provider" MinWidth="100" Binding="{Binding Provider}" CellStyle="{StaticResource FraudStyle}"/>
                 <DataGridTextColumn Header="Note" MinWidth="100" Width="*" Binding="{Binding Note}" />
             </DataGrid.Columns>
+            <DataGrid.ContextMenu>
+                <ContextMenu IsVisibleChanged="onContextShown">
+                    <MenuItem Header="Copy" Command="Copy">
+                        <MenuItem.Icon>
+                            <Image  Source="/DashBoard;component/Images/copy.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Select All" Command="SelectAll"/>
+                    <Separator />
+                    <MenuItem Name="BanTradersMenuItem" Header="Ban Trader(s)" Click="BanTraders"/>
+                    <MenuItem Name="UnbanTradersMenuItem" Header="Unban Trader(s)" Click="UnbanTraders"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
         </DataGrid>
     </Grid>
 </UserControl>

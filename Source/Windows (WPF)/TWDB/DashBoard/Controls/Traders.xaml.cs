@@ -21,15 +21,8 @@ namespace DashBoard.Controls
     /// </summary>
     public partial class Traders : UserControl
     {
-        private Main mainwindow;
-        public Main MainWindow
-        {
-            set
-            {
-                mainwindow = value;
-                //tradersDataGrid.ItemsSource = mainwindow.TraderList;
-            }
-        }
+        public List<Main.Trader> BanList = new List<Main.Trader>();
+        public Main MainWindow { get; set; }
 
         public Traders()
         {
@@ -40,6 +33,82 @@ namespace DashBoard.Controls
         public void Refresh()
         {
             tradersDataGrid.Items.Refresh();
+        }
+
+        private void onContextShown(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            bool bannable = false;
+            bool unbannable = false;
+
+            foreach (Main.Trader trader in tradersDataGrid.SelectedItems)
+            {
+                if (trader.Banned)
+                {
+                    unbannable = true;
+                }
+                else
+                {
+                    bannable = true;
+                }
+            }
+
+            if (bannable)
+            {
+                BanTradersMenuItem.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                BanTradersMenuItem.Visibility = Visibility.Collapsed;
+            }
+
+            if (unbannable)
+            {
+                UnbanTradersMenuItem.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                UnbanTradersMenuItem.Visibility = Visibility.Collapsed;
+            }
+
+        }
+
+
+        private void BanTraders(object sender, RoutedEventArgs e)
+        {
+            BanList.Clear();
+
+            foreach (Main.Trader trader in tradersDataGrid.SelectedItems)
+            {
+                if (BanList.Where(t => t.LastIP == trader.LastIP && t.Logon == trader.Logon).Count() == 0)
+                {
+                    BanList.Add(MainWindow.TraderList.Where(t => t.Game == trader.Game & t.Logon == trader.Logon).First());
+                }
+            }
+
+            Pages.BanTraders banTraders = new Pages.BanTraders(BanList);
+            banTraders.Left = MainWindow.Left + 100;
+            banTraders.Top = MainWindow.Top + 200;
+            banTraders.MainWindow = MainWindow;
+            banTraders.ShowDialog();
+        }
+
+        private void UnbanTraders(object sender, RoutedEventArgs e)
+        {
+            BanList.Clear();
+
+            foreach (Main.Trader trader in tradersDataGrid.SelectedItems)
+            {
+                if (BanList.Where(t => t.LastIP == trader.LastIP && t.Logon == trader.Logon).Count() == 0)
+                {
+                    BanList.Add(MainWindow.TraderList.Where(t => t.Game == trader.Game & t.Logon == trader.Logon).First());
+                }
+            }
+
+            Pages.UnbanTraders unbanTraders = new Pages.UnbanTraders(BanList);
+            unbanTraders.Left = MainWindow.Left + 100;
+            unbanTraders.Top = MainWindow.Top + 200;
+            unbanTraders.MainWindow = MainWindow;
+            unbanTraders.ShowDialog();
         }
     }
 

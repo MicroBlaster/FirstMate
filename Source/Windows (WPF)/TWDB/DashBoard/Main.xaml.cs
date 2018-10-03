@@ -13,6 +13,10 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Xml;
+using System.Windows.Data;
+using System.Threading;
+using System.Timers;
+using NetFwTypeLib;
 
 namespace DashBoard
 {
@@ -34,10 +38,24 @@ namespace DashBoard
         public List<Trader> TraderList = new List<Trader>();
         public List<Provider> ProviderList = new List<Provider>();
         public List<Address> AddressList = new List<Address>();
+        public List<Activity> ActivityList = new List<Activity>();
+
+        // Lock Object for Threaded list changes
+        private object lockActivity = new object();
+        private object lockGame = new object();
+        private object lockTrader = new object();
 
         // Background Worker
         BackgroundWorker logWorker;
         BackgroundWorker fraudWorker;
+
+        // Refresh Timer
+        System.Timers.Timer RefreshTimer;
+        DateTime LastRefresh;
+
+        // ProxyType names and colors
+        static string[] ProxyName = { "None", "HTTP/Socks", "VPN", "Tor" };
+        static string[] ProxyColor = { "Yellow", "Pink", "Pink", "Magenta"};
 
         // Store the mouse state for title bar drag, snap, and maximize events.
         bool UnSnap = false;
@@ -82,9 +100,9 @@ namespace DashBoard
 
             LoadSettings();
 
-            //OverviewControl.MainWindow = this;
+            OverviewControl.MainWindow = this;
             //GamesControl.MainWindow = this;
-            //TradersControl.MainWindow = this;
+            TradersControl.MainWindow = this;
 
             fraudWorker = new BackgroundWorker();
             fraudWorker.WorkerSupportsCancellation = true;
@@ -100,7 +118,30 @@ namespace DashBoard
             logWorker.RunWorkerCompleted += logWorkerCompleted;
             logWorker.DoWork += logWorkerDoWork;
 
-            logWorker.RunWorkerAsync();
+
+            BindingOperations.EnableCollectionSynchronization(ActivityList, lockActivity);
+            BindingOperations.EnableCollectionSynchronization(TraderList, lockTrader);
+
+            GamesControl.gamesDataGrid.ItemsSource = GameList;
+            TradersControl.tradersDataGrid.ItemsSource = TraderList;
+
+            // TODO: add resresh on startup to config
+            BeginRefresh();
+
+            // TODO: add autorefresh and refresh time to config
+            //RefreshTimer.Elapsed += new ElapsedEventHandler(Timer_Elapsed);
+            //RefreshTimer.AutoReset = true;
+            RefreshTimer = new System.Timers.Timer(300000); // 5 Min
+            RefreshTimer.Elapsed += RefreshTimerElapsed;
+            RefreshTimer.AutoReset = true;
+            RefreshTimer.Enabled = true;
+
+
+        }
+
+        private void RefreshTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Dispatcher.Invoke(() => BeginRefresh());
         }
 
         private void onWindowLoaded(object sender, RoutedEventArgs e)
@@ -150,12 +191,55 @@ namespace DashBoard
             }
 
             Version = (string)Registry.GetValue(regkey, "Version", "");
-            ServerRoot = (string)Registry.GetValue(regkey, "ServerRoot", "");
-
             if (Version == "")
             {
                 System.Windows.MessageBox.Show("TradeWars Game Server does not appear to be installed.\nPlease run from the same machine as TWGS.", "Error");
                 return;
+            }
+
+            ServerRoot = (string)Registry.GetValue(regkey, "ServerRoot", "");
+            string TWName = (string)Registry.GetValue(regkey, "TWName", "");  // v1 BBS name - not used in v2
+            string RegHost = (string)Registry.GetValue(regkey, "RegHost", "");
+            string IPAddr = (string)Registry.GetValue(regkey, "IPAddr", "");
+            string Port = (string)Registry.GetValue(regkey, "Port", "");
+            string AdminPort = (string)Registry.GetValue(regkey, "AdminPort", "");
+            string AdminPassword = (string)Registry.GetValue(regkey, "AdminPassword", "");
+
+            if (Version.Contains("v1"))
+            {
+                OverviewControl.OverviewTextBlock1.Text = $"TradeWars Game Server {Version}\n Host Name: {RegHost}\nAddress: {IPAddr}\nGame Port: {Port}\nAdmin Port: {AdminPort}";
+                OverviewControl.OverviewTextBlock2.Text = "";
+            }
+            else
+            {
+                string JumpgateTitle = (string)Registry.GetValue(regkey, "JumpgateTitle", "");
+                string JumpgateAddress = (string)Registry.GetValue(regkey, "JumpgateAddress", "");
+                string JumpgatePort = (string)Registry.GetValue(regkey, "JumpgatePort", "");
+                string JumpgateEmail = (string)Registry.GetValue(regkey, "JumpgateEmail", "");
+                string JumpgateWebsite = (string)Registry.GetValue(regkey, "JumpgateWebsite", "");
+                string JumpgateNotes = (string)Registry.GetValue(regkey, "JumpgateNotes", "");
+                string JumpgateActive = (string)Registry.GetValue(regkey, "JumpgateActive", "");
+                string JumpgatePublic = (string)Registry.GetValue(regkey, "JumpgatePublic", "");
+
+                // TODO: Validate Jumpgate Settings
+                // TODO: Configure / Activate Jumpgate
+
+                OverviewControl.OverviewTextBlock1.Text = $"TradeWars Game Server {Version}\nHost Name: {RegHost}\nAddress: {IPAddr}\nGame Port: {Port}\nAdmin Port: {AdminPort}";
+                if (JumpgateActive == "T")
+                {
+                    if (JumpgatePublic == "T")
+                    {
+                        OverviewControl.OverviewTextBlock2.Text = $"Jumpgate Listing: Active / Public\nTitle: {JumpgateTitle}\nAddress: {JumpgateAddress}\nPort: {JumpgatePort}\nEmail: {JumpgateEmail}\nWebsite: {JumpgateWebsite}";
+                    }
+                    else
+                    {
+                        OverviewControl.OverviewTextBlock2.Text = $"Jumpgate Listing: Private (Not visible on Website)\nTitle: {JumpgateTitle}\nEmail: {JumpgateEmail}\nWebsite: {JumpgateWebsite}";
+                    }
+                }
+                else
+                {
+                    OverviewControl.OverviewTextBlock2.Text = "Jumpgate Listing: Inactive";
+                }
             }
 
             if (Environment.Is64BitOperatingSystem == true)
@@ -480,6 +564,30 @@ namespace DashBoard
             //customizeMenu.Visibility = Visibility.Hidden;
         }
 
+        private void onRefreshMouseEnter(object sender, MouseEventArgs e)
+        {
+            if(ProgressBorder.Visibility == Visibility.Hidden)
+            {
+                RefreshImage.Opacity = .5;
+            }
+        }
+
+        private void onRefreshMouseLeave(object sender, MouseEventArgs e)
+        {
+            if (ProgressBorder.Visibility == Visibility.Hidden)
+            {
+                RefreshImage.Opacity = .3;
+            }
+            else
+            {
+                RefreshImage.Opacity = .1;
+            }
+        }
+
+        private void onRefreshClick(object sender, MouseButtonEventArgs e)
+        {
+            BeginRefresh();
+        }
 
         private void OverviewMouseEnter(object sender, MouseEventArgs e)
         {
@@ -655,9 +763,20 @@ namespace DashBoard
 
             aboutWindow.ShowDialog();
         }
-
+        
         #endregion
         #region Data
+
+        public class Activity
+        {
+            public bool Bannable { get; set; }
+            public DateTime TimeStamp { get; set; }
+            public string Value { get; set; }
+            public string Background { get; set; }
+            public string Address { get; set; }
+
+            public Activity() { }
+        }
 
         public class Game
         {
@@ -665,6 +784,7 @@ namespace DashBoard
             public int Traders { get; set; }
             public int DupeCount { get; set; }
             public int FraudCount { get; set; }
+            public int ProxyCount { get; set; }
             public string Name { get; set; }
             public string Title { get; set; }
             public string Description { get; set; }
@@ -686,9 +806,11 @@ namespace DashBoard
         {
             public DateTime TimeStamp { get; set; }
             public bool Active { get; set; }
+            public bool Banned { get; set; }
             public bool IsDupe { get; set; }
             public bool IsFraud { get; set; }
-            public bool IsDynamic { get; set; }
+            public bool IsDynamic { get; set; }  // TODO: Test for Static / Dynamic IPs
+            public int ProxyType { get; set; }
             public int AddressCount { get; set; }
             public int UserID { get; set; }
             public int IpqFraudScore { get; set; }
@@ -739,13 +861,85 @@ namespace DashBoard
             }
         }
 
-
-
         #endregion
         #region Background Workers
 
+        private void BeginRefresh()
+        {
+            if(ProgressBorder.Visibility == Visibility.Hidden)
+            {
+                ProgressBar.Value = 0;
+                ProgressLabel.Content = "Scanning...";
+                ProgressBorder.Visibility = Visibility.Visible;
+                RefreshImage.Opacity = .1;
+
+                AddressList.Clear();
+                ActivityList.Clear();
+
+                // Clear the notes field in TraderList for all records.
+                TraderList.Where(t => t.Note != null).ToList().ForEach(t => t.Note = null);
+
+                // Clear the LastIP field in TraderList for all records.
+                // TraderList.ForEach(t => t.LastIP = null);
+
+
+                logWorker.RunWorkerAsync();
+            }
+        }
+
+        private void RefrehCompleted()
+        {
+            foreach (Game g in GameList)
+            {
+                g.FraudCount = TraderList.Where(t => t.Game == g.Name & t.IsFraud).Count();
+                g.ProxyCount = TraderList.Where(t => t.Game == g.Name & t.ProxyType > 0).Count();
+            }
+
+            OverviewControl.ActivityDataGrid.ItemsSource = ActivityList.OrderByDescending(a => a.TimeStamp).Take(100);
+            OverviewControl.Refresh();
+
+            GamesControl.gamesDataGrid.ItemsSource = GameList;
+            GamesControl.Refresh();
+
+            TradersControl.tradersDataGrid.ItemsSource = TraderList.ToList();
+            TradersControl.Refresh();
+
+            ProgressBorder.Visibility = Visibility.Hidden;
+            RefreshImage.Opacity = .3;
+
+            INetFwPolicy2 firewallPolicy = (INetFwPolicy2)Activator.CreateInstance(Type.GetTypeFromProgID("HNetCfg.FwPolicy2"));
+
+            INetFwRule rule = null;
+            try
+            {
+                rule = firewallPolicy.Rules.Item("TW2002 Banned Traders");
+            }
+            catch { }
+
+            if (rule != null)
+            {
+                string[] remoteAddresses = rule.RemoteAddresses.Split(',');
+
+                foreach(string address in remoteAddresses)
+                {
+                    string s = address.Replace(".0/255.255.255.0", "");
+                    foreach(Trader trader in TraderList)
+                    {
+                        if(trader.LastIP.Contains(s))
+                        {
+                            trader.Banned = true;
+                        }
+                    }
+                }
+            }
+
+        }
+
+
         private void logWorkerProgress(object sender, ProgressChangedEventArgs e)
         {
+            ProgressLabel.Content = (string) e.UserState;
+            ProgressBar.Value = e.ProgressPercentage;
         }
 
         private void logWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -753,25 +947,30 @@ namespace DashBoard
 
             if (Properties.Settings.Default.FraudDetection == true)
             {
+                OverviewControl.ActivityDataGrid.ItemsSource = ActivityList.OrderByDescending(a => a.TimeStamp).Take(100);
+                OverviewControl.Refresh();
+
                 fraudWorker.RunWorkerAsync();
             }
             else
             {
-                foreach (Game g in GameList)
-                {
-                    g.FraudCount = TraderList.Where(t => t.Game == g.Name & t.IsFraud).Count();
-                }
-
-                GamesControl.gamesDataGrid.ItemsSource = GameList;
-                TradersControl.tradersDataGrid.ItemsSource = TraderList;
+                RefrehCompleted();
             }
         }
 
-
         private void logWorkerDoWork(object sender, DoWorkEventArgs e)
         {
-            foreach(Game game in GameList)
+            DateTime detected = new DateTime();
+            int CurrentGame = 0;
+            int GameCount = GameList.Count();
+
+            foreach (Game game in GameList)
             {
+                CurrentGame++;
+                logWorker.ReportProgress((CurrentGame * 100 / GameCount) / 4 * 3, $"Game {game.Name} Logs...");
+
+                //System.Threading.Thread.Sleep(10000);
+
                 if(File.Exists(game.Directory + "\\twgame.log"))
                 {
                     String line1, line2;
@@ -799,7 +998,7 @@ namespace DashBoard
                                     uid = int.Parse(parts[1].Replace("): New Player on Trade Wars", ""));
 
                                     string address;
-                                    if (IP.Count() > 2) address = $"{IP[0]}.{IP[1]}.{IP[2]}.0/24";
+                                    if (IP.Count() > 2) address = $"{IP[0]}.{IP[1]}.{IP[2]}.*";
                                     else address = line1.Split(' ')[3];
 
                                     if (alias != "")
@@ -823,24 +1022,54 @@ namespace DashBoard
                                             IP = address
                                         });
 
-                                        TraderList.Add(new Trader()
+                                        lock (lockTrader)
                                         {
-                                            TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
-                                            UserID = uid,
-                                            Game = game.Name,
-                                            LastIP = line1.Split(' ')[3],
-                                            DisplayAddress = line1.Split(' ')[3],
-                                            Logon = logon,
-                                            Alias = alias,
-                                            DisplayName = display,
-                                            AddressCount = 1
-                                        });
+                                            List<Trader> traders = TraderList.Where(t => t.Game == game.Name & t.Logon == logon).ToList();
+                                            if (traders.Count() == 0)
+                                            {
+                                                TraderList.Add(new Trader()
+                                                {
+                                                    TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
+                                                    UserID = uid,
+                                                    Game = game.Name,
+                                                    LastIP = line1.Split(' ')[3],
+                                                    DisplayAddress = line1.Split(' ')[3],
+                                                    Logon = logon,
+                                                    Alias = alias,
+                                                    DisplayName = display,
+                                                    AddressCount = 1
+                                                });
+
+                                            }
+                                            else
+                                            {
+                                                // Updateing LastIP during refresh prevents false IP Change detection
+                                                traders.Single().LastIP = line1.Split(' ')[3];
+                                            }
+                                        }
+
+                                        lock (lockActivity)
+                                        {
+                                            ActivityList.Add(new Activity()
+                                            {
+                                                TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
+                                                Value = $"New Trader in Game {game.Name} - {display} from {line1.Split(' ')[3]}",
+                                                Address = line1.Split(' ')[3],
+                                                Bannable = true
+                                            });
+                                        }
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    // TODO: Log parse exception
-                                    throw;
+                                    ActivityList.Add(new Activity()
+                                    {
+                                        TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
+                                        Value = $"Unable to parse line: {line1.Substring(22)}",
+                                        Background = "LightYellow",
+                                        Address = line1.Split(' ')[3],
+                                        Bannable = true
+                                    });
                                 }
 
 
@@ -859,7 +1088,7 @@ namespace DashBoard
                                 string logon = parts[0].Substring(line1.IndexOf(' ', 23) + 1);
 
                                 string address;
-                                if (IP.Count() > 2) address = $"{IP[0]}.{IP[1]}.{IP[2]}.0/24";
+                                if (IP.Count() > 2) address = $"{IP[0]}.{IP[1]}.{IP[2]}.*";
                                 else address = line1.Split(' ')[3];
 
                                 uid = int.Parse(parts[1].Replace("): Ran Tradewars 2002.", ""));
@@ -867,29 +1096,49 @@ namespace DashBoard
                                 List<Trader> traders = TraderList.Where(t => t.Game == game.Name & t.Logon == logon & t.LastIP != line1.Split(' ')[3]).ToList();
                                 if (traders.Count() > 0)
                                 {
+                                    lock (lockActivity)
+                                    {
+                                        ActivityList.Add(new Activity()
+                                        {
+                                            TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
+                                            Value = $"Trader {traders.Single().DisplayName} Changed address from {traders.Single().LastIP} to {line1.Split(' ')[3]} in Game {game.Name}",
+                                            Background = "LightYellow",
+                                            Address = line1.Split(' ')[3],
+                                            Bannable = true
+                                        });
+                                    }
+
                                     traders.Single().LastIP = line1.Split(' ')[3];
+                                    traders.Single().TimeStamp = Convert.ToDateTime(line1.Substring(0, 22));
 
                                     if (AddressList.Where(a => a.Game == game.Name & a.Logon == logon & a.IP == address).Count() == 0)
                                     {
-                                        AddressList.Add(new Address(){
+                                        AddressList.Add(new Address()
+                                        {
                                             TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
                                             Logon = logon,
                                             Game = game.Name,
-                                            IP = address});
+                                            IP = address
+                                        });
 
-                                        traders.Single().AddressCount ++;
+                                        traders.Single().AddressCount++;
                                         traders.Single().IsDynamic = true;
                                         traders.Single().DisplayAddress = $"{line1.Split(' ')[3]} ({traders.Single().AddressCount})";
-
                                     }
                                 }
                             }
                             catch (Exception ex)
                             {
-                                // TODO: Log parse exception
-                                throw;
+                                lock (lockActivity)
+                                {
+                                    ActivityList.Add(new Activity()
+                                    {
+                                        TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
+                                        Value = $"Unable to parse line: {line1.Substring(22)}",
+                                        Background = "LightYellow",
+                                    });
+                                }
                             }
-
 
                         }
 
@@ -916,11 +1165,25 @@ namespace DashBoard
                         DupeLogons += $"{item.Logon}/";
                     }
 
+                    detected = DateTime.MinValue;
                     foreach (var item in dupe)
                     {
-                        Trader trader = TraderList.Where(t => t.Game == g.Name & t.Logon == item.Logon).Single();
+                        Trader trader = TraderList.Where(t => t.Game == g.Name & t.Logon == item.Logon).First();
                         trader.IsDupe = true;
-                        trader.Note = $"Dupe: {DupeLogons} @ {item.IP}".Replace("/ "," ");
+                        trader.Note = $"Dupe: {DupeLogons} @ {item.IP}".Replace("/ ", " ");
+                        detected = trader.TimeStamp > detected ? trader.TimeStamp : detected;
+                    }
+
+                    lock (lockActivity)
+                    {
+                        ActivityList.Add(new Activity()
+                        {
+                            TimeStamp = detected.AddSeconds(1),
+                            Value = $"Duplicate Player detected in Game {g.Name} - {DupeLogons} @ {dupe.First().IP}".Replace("/ ", " "),
+                            Background = "Red",
+                            Address = dupe.First().IP,
+                            Bannable = true
+                        });
                     }
                 }
             }
@@ -929,38 +1192,78 @@ namespace DashBoard
 
             if(File.Exists(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "provider.log")))
             { 
-            XmlDocument xmlDoc = new XmlDocument();
+                XmlDocument xmlDoc = new XmlDocument();
+                string line = "";
 
                 using (StreamReader sr = new StreamReader(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "provider.log")))
                 {
                     while (sr.Peek() >= 0)
                     {
+
                         try
                         {
-                            string line = sr.ReadLine();
+                            line = sr.ReadLine();
+
                             xmlDoc.LoadXml(line);
                             XmlNode providerNode = xmlDoc.SelectSingleNode("//Provider");
 
+                            detected = DateTime.MinValue;
                             string LastIP = providerNode.Attributes["IP"].Value;
 
+                            int IpqFraudScore = Int32.Parse(providerNode.Attributes["IpqFraudScore"].Value);
+                            int IpiFraudScore = (Int32)(Double.Parse(providerNode.Attributes["IpiFraudScore"].Value));
+
                             List<Trader> traders = TraderList.Where(t => t.LastIP == LastIP).ToList();
+                            string TraderNames = "";
                             foreach (Trader trader in traders)
                             {
                                 trader.LastError = providerNode.Attributes["LastError"].Value;
                                 trader.Provider = providerNode.Attributes["Provider"].Value;
                                 trader.Location = providerNode.Attributes["Location"].Value;
-                                trader.IsFraud = (providerNode.Attributes["IsFraud"].Value == "True");
-                                trader.IpqFraudScore = Int32.Parse(providerNode.Attributes["IpqFraudScore"].Value);
-                                trader.IpiFraudScore = Int32.Parse(providerNode.Attributes["IpiFraudScore"].Value);
+                                trader.IsFraud = providerNode.Attributes["IsFraud"].Value == "True";
+                                trader.IpqFraudScore = IpqFraudScore;
+                                trader.IpiFraudScore = IpiFraudScore;
+
+                                trader.ProxyType = 0;
+                                if (providerNode.Attributes["ProxyType"] != null)
+                                    trader.ProxyType = Int32.Parse(providerNode.Attributes["ProxyType"].Value);
 
                                 if (trader.IsFraud)
                                 {
-                                    trader.Note = $"Fraud Score: {trader.IpqFraudScore} / {trader.IpiFraudScore * 100} {trader.Note}";
+                                    trader.Note = $"Fraud Score: {trader.IpqFraudScore} / {trader.IpiFraudScore} Proxy: {ProxyName[traders.First().ProxyType]} {trader.Note}";
+                                    TraderNames += $"{trader.Logon}/";
+                                    detected = trader.TimeStamp > detected ? trader.TimeStamp : detected;
+                                }
+                            }
+                            if (traders.Count > 0)
+                            {
+                                if (traders.First().IsFraud)
+                                {
+                                    lock (lockActivity)
+                                    {
+                                        ActivityList.Add(new Activity()
+                                        {
+                                            TimeStamp = detected.AddSeconds(1),
+                                            Value = $"Suspicious provider detected @ {LastIP} Fraud Score: {IpqFraudScore} / {IpiFraudScore} Proxy: {ProxyName[traders.First().ProxyType]} Traders: {TraderNames.Replace("/", "")}",
+                                            Background = ProxyColor[traders.First().ProxyType],
+                                            Address = traders.First().LastIP,
+                                            Bannable = true
+                                        });
+                                    }
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
+                            lock (lockActivity)
+                            {
+                                ActivityList.Add(new Activity()
+                                {
+                                    TimeStamp = detected.AddSeconds(1),
+                                    Value = $"Error reading provider log: {line}",
+                                    Background = "Pink"
+                                });
+                            }
                         }
                     }
                 }
@@ -981,10 +1284,12 @@ namespace DashBoard
                 string Key = Properties.Settings.Default.PrivateKey;
 
                 // Initiate ipqualityscore.com request in the background.
-                var stringTask1 = client.GetStringAsync($"{Uri1}/{Key}/{trader.LastIP}");
+                // var stringTask1 = client.GetStringAsync($"{Uri1}/{Key}/{trader.LastIP}");
+                var stringTask1 = client.GetStringAsync($"{Uri1}/{Key}/{trader.LastIP}?strictness=4");
 
                 // Initiate getipintel.net request in the background.
-                var stringTask2 = client.GetStringAsync($"{Uri2}?ip={trader.LastIP}&contact={Email}&flags=m");
+                // var stringTask2 = client.GetStringAsync($"{Uri2}?ip={trader.LastIP}&contact={Email}&flags=m");
+                var stringTask2 = client.GetStringAsync($"{Uri2}?ip={trader.LastIP}&contact={Email}&flags=b");
 
 
                 // Process ipqualityscore.com result.
@@ -998,15 +1303,16 @@ namespace DashBoard
                     String region = resultNode["region"].FirstChild.Value;
                     String country = resultNode["country_code"].FirstChild.Value;
 
-                    bool proxy = (resultNode["proxy"].FirstChild.Value == "true");
-                    bool vpn = (resultNode["vpn"].FirstChild.Value == "true");
-                    bool tor = (resultNode["tor"].FirstChild.Value == "true");
-                    bool abuse = (resultNode["recent_abuse"].FirstChild.Value == "true");
+                    trader.ProxyType = 0;
+                    if (resultNode["proxy"].FirstChild.Value == "true") trader.ProxyType = 1;
+                    if (resultNode["vpn"].FirstChild.Value == "true") trader.ProxyType = 2;
+                    if (resultNode["tor"].FirstChild.Value == "true") trader.ProxyType = 3;
+                    //bool abuse = (resultNode["recent_abuse"].FirstChild.Value == "true");
 
                     trader.IpqFraudScore = Int32.Parse(resultNode["fraud_score"].FirstChild.Value);
                     trader.Provider = resultNode["ISP"].FirstChild.Value.Replace("&", "");  // or use organization?
                     trader.Location = $"{city}, {region} {country}";
-                    trader.IsFraud = (proxy | vpn | tor | abuse | trader.IpqFraudScore > 0);
+                    trader.IsFraud = (trader.IpqFraudScore > 0 | trader.ProxyType > 0);
 
                 }
                 else
@@ -1018,12 +1324,21 @@ namespace DashBoard
                 {
                     //Process ipqualityscore.com result.
                     msg = await stringTask2;
-                    trader.IpiFraudScore = Int32.Parse(msg);
+                    trader.IpiFraudScore = (Int32)(Double.Parse(msg) * 100);
                     trader.IsFraud = (trader.IsFraud | trader.IpiFraudScore > 0);
+
+                    //The proxy check system will return negative values on error.For standard format(non - json), an additional HTTP 400 status code is returned
+                    //- 1 Invalid no input
+                    //- 2 Invalid IP address
+                    //- 3 Unroutable address / private address
+                    //-4 Unable to reach database, most likely the database is being updated.Keep an eye on twitter for more information.
+                    //-5 Your connecting IP has been banned from the system or you do not have permission to access a particular service. Did you exceed your query limits? Did you use an invalid email address? If you want more information, please use the contact links below.
+                    //-6 You did not provide any contact information with your query or the contact information is invalid.
+                    //If you exceed the number of allowed queries, you'll receive a HTTP 429 error.
                 }
                 catch (Exception)
                 {
-                    trader.IpiFraudScore = -1;
+                    trader.IpiFraudScore = -100;
                 }
             }
             catch (Exception ex)
@@ -1033,24 +1348,21 @@ namespace DashBoard
         
             if (trader.IsFraud)
             {
-                trader.Note = $"Fraud Score: {trader.IpqFraudScore} / {trader.IpiFraudScore * 100} {trader.Note}";
+                trader.Note = $"Fraud Score: {trader.IpqFraudScore} / {trader.IpiFraudScore} Proxy: {ProxyName[trader.ProxyType]} {trader.Note}";
             }
+
 
         }
 
         private void fraudWorkerProgress(object sender, ProgressChangedEventArgs e)
         {
+            ProgressLabel.Content = (string)e.UserState;
+            ProgressBar.Value = e.ProgressPercentage;
         }
 
         private void fraudWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            foreach(Game g in GameList)
-            {
-                g.FraudCount = TraderList.Where(t => t.Game == g.Name & t.IsFraud).Count();
-            }
-
-            GamesControl.gamesDataGrid.ItemsSource = GameList;
-            TradersControl.tradersDataGrid.ItemsSource = TraderList;
+            RefrehCompleted();          
         }
 
         private void fraudWorkerDoWorkAsync(object sender, DoWorkEventArgs e)
@@ -1062,16 +1374,80 @@ namespace DashBoard
                 Directory.CreateDirectory($"{AppDataPath}/TradeWars/Dashboard");
             }
 
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "provider.log"),true))
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "provider.log"), true))
             {
-                foreach (Trader trader in TraderList.Where(t => t.Location == null && t.LastError == null))
+                List<Trader> traders = TraderList.Where(t => t.Location == null && t.LastError == null).OrderBy(t => t.LastIP).Take(10).ToList();
+
+                int CurrentTrader = 0;
+                int TraderCount = traders.Count();
+
+                if (LastRefresh.AddMinutes(2) > DateTime.Now | TraderCount == 0)
                 {
-                    CheckFraud(trader).Wait();
-                    outputFile.WriteLine($"<Provider IP=\"{trader.LastIP}\" LastError=\"{trader.LastError}\" Provider=\"{trader.Provider}\" Location=\"{trader.Location}\" IsFraud=\"{trader.IsFraud}\" IpqFraudScore=\"{trader.IpqFraudScore}\" IpiFraudScore=\"{trader.IpiFraudScore}\" Checked=\"{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortDateString()}\" />");
-                    if (trader.LastError != null)
+                    fraudWorker.ReportProgress(110, "Completed...");
+                    System.Threading.Thread.Sleep(1000);
+                    return;
+                }
+
+
+                Trader LastTrader = new Trader();
+                foreach (Trader trader in traders)
+                {
+                    LastRefresh = DateTime.Now;
+
+                    CurrentTrader++;
+                    fraudWorker.ReportProgress(((CurrentTrader * 100 / TraderCount) / 4) + 75, $"IP: {trader.LastIP}");
+                    System.Threading.Thread.Sleep(500);
+
+                    if (LastTrader.LastIP != trader.LastIP)
                     {
-                        trader.Note = $"Fraud Check Failed. {trader.Note}";
+                        LastTrader = trader;
+
+                        CheckFraud(trader).Wait();
+
+                        outputFile.WriteLine($"<Provider IP=\"{trader.LastIP}\" LastError=\"{trader.LastError}\" Provider=\"{trader.Provider}\" Location=\"{trader.Location}\" IsFraud=\"{trader.IsFraud}\" ProxyType=\"{trader.ProxyType}\" IpqFraudScore=\"{trader.IpqFraudScore}\" IpiFraudScore=\"{trader.IpiFraudScore}\" Checked=\"{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}\" />");
+
+                        if (trader.LastError != null)
+                        {
+                            trader.Note = $"Fraud Check Failed. {trader.Note}";
+                            lock (lockActivity)
+                            {
+                                ActivityList.Add(new Activity()
+                                {
+                                    TimeStamp = trader.TimeStamp.AddSeconds(1),
+                                    Value = $"Fraud Check Failed for {trader.LastIP} Trader: {trader.DisplayName}",
+                                    Background = "Pink",
+                                });
+                            }
+                        }
+                        else
+                        {
+                            if (trader.IsFraud)
+                            {
+                                lock (lockActivity)
+                                {
+                                    ActivityList.Add(new Activity()
+                                    {
+                                        TimeStamp = trader.TimeStamp.AddSeconds(1),
+                                        Value = $"Suspicious provider detected @ {trader.LastIP} Fraud Score: {trader.IpqFraudScore} / {trader.IpiFraudScore} Proxy: {ProxyName[trader.ProxyType]} Trader: {trader.Logon}",
+                                        Background = ProxyColor[trader.ProxyType],
+                                        Address = trader.LastIP,
+                                        Bannable = true
+                                    });
+                                }
+                            }
+                        }
                     }
+                    else
+                    {
+                        // Skip Fraud Check, becuase this is a Duplicate and copy Fraud info from last trader.
+                        trader.LastError = LastTrader.LastError;
+                        trader.Provider = LastTrader.Provider;
+                        trader.Location = LastTrader.Location;
+                        trader.IsFraud = LastTrader.IsFraud;
+                        trader.IpqFraudScore = LastTrader.IpqFraudScore;
+                        trader.IpiFraudScore = LastTrader.IpiFraudScore;
+                    }
+
                 }
             }
         }
