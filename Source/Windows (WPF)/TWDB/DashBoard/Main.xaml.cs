@@ -964,6 +964,14 @@ namespace DashBoard
             int CurrentGame = 0;
             int GameCount = GameList.Count();
 
+            string AppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            if (!Directory.Exists($"{AppDataPath}/TradeWars/Dashboard"))
+            {
+                Directory.CreateDirectory($"{AppDataPath}/TradeWars");
+                Directory.CreateDirectory($"{AppDataPath}/TradeWars/Dashboard");
+            }
+
+
             foreach (Game game in GameList)
             {
                 CurrentGame++;
@@ -1062,14 +1070,20 @@ namespace DashBoard
                                 }
                                 catch (Exception ex)
                                 {
-                                    ActivityList.Add(new Activity()
+                                    //ActivityList.Add(new Activity()
+                                    //{
+                                    //    TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
+                                    //    Value = $"Unable to parse line: {line1.Substring(22)}",
+                                    //    Background = "LightYellow",
+                                    //    Address = line1.Split(' ')[3],
+                                    //    Bannable = true
+                                    //});
+
+
+                                    using (StreamWriter errorFile = new StreamWriter(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "error.log"), true))
                                     {
-                                        TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
-                                        Value = $"Unable to parse line: {line1.Substring(22)}",
-                                        Background = "LightYellow",
-                                        Address = line1.Split(' ')[3],
-                                        Bannable = true
-                                    });
+                                        errorFile.WriteLine($"Unable to parse line: {line1.Substring(22)}");
+                                    }
                                 }
 
 
@@ -1131,12 +1145,20 @@ namespace DashBoard
                             {
                                 lock (lockActivity)
                                 {
-                                    ActivityList.Add(new Activity()
-                                    {
-                                        TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
-                                        Value = $"Unable to parse line: {line1.Substring(22)}",
-                                        Background = "LightYellow",
-                                    });
+//                                    ActivityList.Add(new Activity()
+//                                   {
+//                                        TimeStamp = Convert.ToDateTime(line1.Substring(0, 22)),
+//                                        Value = $"Unable to parse line: {line1.Substring(22)}",
+//                                        Background = "LightYellow",
+//                                    });
+                                }
+
+                                // Log error to file
+
+                                using (StreamWriter errorFile = new StreamWriter(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "error.log"), true))
+                                {
+                                    errorFile.WriteLine($"Unable to parse line: {line1.Substring(22)}");
+
                                 }
                             }
 
@@ -1188,7 +1210,7 @@ namespace DashBoard
                 }
             }
 
-            string AppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+//            string AppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
 
             if(File.Exists(Path.Combine($"{AppDataPath}/TradeWars/Dashboard", "provider.log")))
             { 
